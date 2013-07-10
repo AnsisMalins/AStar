@@ -56,7 +56,7 @@ pair<dist, collection<Point>> astar(Map world, Point start, Point goal)
 	Matrix<Point> came_from(world.Width(), world.Height());
 
 	Matrix<dist> g_score(world.Width(), world.Height());
-	g_score.Set(start, 0);
+	g_score[start] = 0;
 
 	while (!openset.empty())
 	{
@@ -81,9 +81,9 @@ pair<dist, collection<Point>> astar(Map world, Point start, Point goal)
 
 			if (!(flags[neighbor] & OPENSET) || tentative_g_score < g_score[neighbor])
 			{
-				came_from.Set(neighbor, current);
+				came_from[neighbor] = current;
 				flags[neighbor] |= CAME_FROM;
-				g_score.Set(neighbor, tentative_g_score);
+				g_score[neighbor] = tentative_g_score;
 
 				if (flags[neighbor] & OPENSET)
 				{

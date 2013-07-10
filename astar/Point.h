@@ -10,6 +10,6 @@ public:
 	bool operator ==(const Point& other) const;
 	bool operator !=(const Point& other) const;
 private:
-	int x;
-	int y;
+	char x;
+	char y;
 };

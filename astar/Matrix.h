@@ -27,14 +27,6 @@ public:
 		return height;
 	}
 
-	void Set(const Point& p, T value)
-	{
-		if (p.X() >= 0 && p.X() < width
-			&& p.Y() >= 0 && p.Y() < height)
-			data[p.X() + p.Y() * width] = value;
-		else throw exception("Matrix.h: Point out of bounds!");
-	}
-
 	int Width() const
 	{
 		return width;
@@ -47,10 +39,7 @@ public:
 
 	const T& operator [](const Point& p) const
 	{
-		if (p.X() >= 0 && p.X() < width
-			&& p.Y() >= 0 && p.Y() < height)
-			return data[p.X() + p.Y() * width];
-		else throw exception("Matrix.h: Point out of bounds!");
+		return data[p.X() + p.Y() * width];
 	}
 private:
 	T* data;
