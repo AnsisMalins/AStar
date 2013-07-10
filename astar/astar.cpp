@@ -41,6 +41,8 @@ pair<dist, collection<Point>> reconstruct_path(
 
 pair<dist, collection<Point>> astar(Map world, Point start, Point goal)
 {
+	if (!world.IsFree(start) || !world.IsFree(goal)) return failure;
+
 	Matrix<bool> closedset_contains(world.Width(), world.Height());
 	multimap<dist, Point, less<dist>> openset;
 	openset.insert(make_pair(heuristic_cost_estimate(start, goal), start));
@@ -101,9 +103,11 @@ pair<dist, collection<Point>> astar(Map world, Point start, Point goal)
 	return failure;
 }
 
+#define DEBUG
+
 void Main(collection<wstring> args)
 {
-	if (args.size() < 5) throw exception("Not enough arguments.");
+	if (args.size() < 5) throw exception("Usage: astar.exe MapFileName StartX StartY EndX EndY [showmap]");
 
 	Map world(args[0]);
 	Point start(_wtoi(args[1].c_str()), _wtoi(args[2].c_str()));
@@ -111,7 +115,7 @@ void Main(collection<wstring> args)
 
 	wcout << endl
 		<< "Start position: (" << args[1] << ", " << args[2] << ")" << endl
-		<< "End position: (" << args[3] << ", " << args[4] << ")" << endl;
+		<< "End position:   (" << args[3] << ", " << args[4] << ")" << endl;
 
 	LARGE_INTEGER t1;
 	LARGE_INTEGER t2;
@@ -122,14 +126,15 @@ void Main(collection<wstring> args)
 	LARGE_INTEGER freq;
 	QueryPerformanceFrequency(&freq);
 
+	float dt = (t2.QuadPart - t1.QuadPart) / (float)freq.QuadPart * 1000;
+
 	wcout << endl
 		<< "Path found:     " << (result == failure ? "false" : "true") << endl
 		<< endl
-		<< "Total duration: " <<
-		(t2.QuadPart - t1.QuadPart) * freq.QuadPart / 1000.0f << " ms" << endl;
+		<< "Total duration: " << dt << " ms" << endl;
 
 	if (args.contains(L"showmap")) world.Show(result.second);
-#ifdef _DEBUG
+#ifdef DEBUG
 	world.Show(result.second, ofstream("result.txt"));
 #endif
 }
@@ -140,7 +145,7 @@ int wmain(int argc, wchar_t** argv)
 	try
 	{
 		collection<wstring> args;
-#ifdef _DEBUG
+#ifdef DEBUG
 		args.push_back(wstring(L"C:\\Users\\Ansis\\Desktop\\AStar\\AStarMap.txt"));
 		args.push_back(wstring(L"20"));
 		args.push_back(wstring(L"20"));
@@ -157,7 +162,7 @@ int wmain(int argc, wchar_t** argv)
 		wcerr << ex.what() << endl;
 		result = 1;
 	}
-#ifdef _DEBUG
+#ifdef DEBUG
 	char _debug;
 	cin >> _debug;
 #endif
