@@ -1,0 +1,165 @@
+#include "stdafx.h"
+#include "collection.h"
+#include "Map.h"
+#include "Matrix.h"
+
+using namespace std;
+
+typedef int dist;
+
+pair<dist, collection<Point>> failure = make_pair((dist)-1, collection<Point>());
+
+dist dist_between(const Point& a, const Point& b)
+{
+	return (dist)1;
+}
+
+dist heuristic_cost_estimate(const Point& start, const Point& goal)
+{
+	return (dist)(abs(goal.X() - start.X()) + abs(goal.Y() - start.Y()));
+}
+
+pair<dist, collection<Point>> reconstruct_path(
+	const Matrix<Point>& came_from, const Matrix<bool>& is_came_from, Point current_node)
+{
+	stack<Point> backward;
+	while (true)
+	{
+		backward.push(current_node);
+		if (!is_came_from[current_node]) break;
+		current_node = came_from[current_node];
+	}
+	collection<Point> forward;
+	forward.reserve(backward.size());
+	while (!backward.empty())
+	{
+		forward.push_back(backward.top());
+		backward.pop();
+	}
+	return make_pair((dist)forward.size(), forward);
+}
+
+pair<dist, collection<Point>> astar(Map world, Point start, Point goal)
+{
+	Matrix<bool> closedset_contains(world.Width(), world.Height());
+	multimap<dist, Point, less<dist>> openset;
+	openset.insert(make_pair(heuristic_cost_estimate(start, goal), start));
+	Matrix<bool> openset_contains(world.Width(), world.Height());
+	openset_contains.Set(start, true);
+
+	Matrix<Point> came_from(world.Width(), world.Height());
+	Matrix<bool> is_came_from(world.Width(), world.Height());
+
+	Matrix<dist> g_score(world.Width(), world.Height());
+	g_score.Set(start, 0);
+
+	while (!openset.empty())
+	{
+		Point current = openset.begin()->second;
+		dist current_f = openset.begin()->first;
+		if (current == goal)
+			return reconstruct_path(came_from, is_came_from, goal);
+
+		openset.erase(openset.begin());
+		openset_contains.Set(current, false);
+		closedset_contains.Set(current, true);
+
+		collection<Point> neighbors = world.Neighbors(current);
+		for (collection<Point>::const_iterator i = neighbors.begin();
+			i != neighbors.end(); ++i)
+		{
+			Point neighbor = *i;
+
+			dist tentative_g_score = g_score[current] + dist_between(current, neighbor);
+			if (closedset_contains[neighbor] && tentative_g_score >= g_score[neighbor])
+				continue;
+
+
+			if (!openset_contains[neighbor] || tentative_g_score < g_score[neighbor])
+			{
+				came_from.Set(neighbor, current);
+				is_came_from.Set(neighbor, true);
+				g_score.Set(neighbor, tentative_g_score);
+
+				if (openset_contains[neighbor])
+				{
+					for (auto i = openset.begin(); i != openset.end(); ++i)
+					{
+						if (i->second == neighbor)
+						{
+							openset.erase(i);
+							break;
+						}
+					}
+				}
+				openset.insert(make_pair(g_score[neighbor] + heuristic_cost_estimate(neighbor, goal), neighbor));
+				openset_contains.Set(neighbor, true);
+			}
+		}
+	}
+
+	return failure;
+}
+
+void Main(collection<wstring> args)
+{
+	if (args.size() < 5) throw exception("Not enough arguments.");
+
+	Map world(args[0]);
+	Point start(_wtoi(args[1].c_str()), _wtoi(args[2].c_str()));
+	Point end(_wtoi(args[3].c_str()), _wtoi(args[4].c_str()));
+
+	wcout << endl
+		<< "Start position: (" << args[1] << ", " << args[2] << ")" << endl
+		<< "End position: (" << args[3] << ", " << args[4] << ")" << endl;
+
+	LARGE_INTEGER t1;
+	LARGE_INTEGER t2;
+	QueryPerformanceCounter(&t1);
+	pair<dist, collection<Point>> result = astar(world, start, end);
+	QueryPerformanceCounter(&t2);
+
+	LARGE_INTEGER freq;
+	QueryPerformanceFrequency(&freq);
+
+	wcout << endl
+		<< "Path found:     " << (result == failure ? "false" : "true") << endl
+		<< endl
+		<< "Total duration: " <<
+		(t2.QuadPart - t1.QuadPart) * freq.QuadPart / 1000.0f << " ms" << endl;
+
+	if (args.contains(L"showmap")) world.Show(result.second);
+#ifdef _DEBUG
+	world.Show(result.second, ofstream("result.txt"));
+#endif
+}
+
+int wmain(int argc, wchar_t** argv)
+{
+	int result = 0;
+	try
+	{
+		collection<wstring> args;
+#ifdef _DEBUG
+		args.push_back(wstring(L"C:\\Users\\Ansis\\Desktop\\AStar\\AStarMap.txt"));
+		args.push_back(wstring(L"20"));
+		args.push_back(wstring(L"20"));
+		args.push_back(wstring(L"120"));
+		args.push_back(wstring(L"10"));
+#else
+		args.reserve(argc);
+		for (int i = 1; i < argc; i++) args.push_back(wstring(argv[i]));
+#endif
+		Main(args);
+	}
+	catch (const exception& ex)
+	{
+		wcerr << ex.what() << endl;
+		result = 1;
+	}
+#ifdef _DEBUG
+	char _debug;
+	cin >> _debug;
+#endif
+	return result;
+}
