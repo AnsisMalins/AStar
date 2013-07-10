@@ -40,7 +40,12 @@ public:
 		return width;
 	}
 
-	const T operator [](const Point& p) const
+	T& operator [](const Point& p)
+	{
+		return data[p.X() + p.Y() * width];
+	}
+
+	const T& operator [](const Point& p) const
 	{
 		if (p.X() >= 0 && p.X() < width
 			&& p.Y() >= 0 && p.Y() < height)

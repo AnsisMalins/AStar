@@ -19,14 +19,18 @@ dist heuristic_cost_estimate(const Point& start, const Point& goal)
 	return (dist)(abs(goal.X() - start.X()) + abs(goal.Y() - start.Y()));
 }
 
+#define CLOSEDSET 0x1
+#define OPENSET 0x2
+#define CAME_FROM 0x4
+
 pair<dist, collection<Point>> reconstruct_path(
-	const Matrix<Point>& came_from, const Matrix<bool>& is_came_from, Point current_node)
+	const Matrix<Point>& came_from, const Matrix<int>& flags, Point current_node)
 {
 	stack<Point> backward;
 	while (true)
 	{
 		backward.push(current_node);
-		if (!is_came_from[current_node]) break;
+		if (!(flags[current_node] & CAME_FROM)) break;
 		current_node = came_from[current_node];
 	}
 	collection<Point> forward;
@@ -43,14 +47,13 @@ pair<dist, collection<Point>> astar(Map world, Point start, Point goal)
 {
 	if (!world.IsFree(start) || !world.IsFree(goal)) return failure;
 
-	Matrix<bool> closedset_contains(world.Width(), world.Height());
+	Matrix<int> flags(world.Width(), world.Height());
+	flags[start] |= OPENSET;
+
 	multimap<dist, Point, less<dist>> openset;
 	openset.insert(make_pair(heuristic_cost_estimate(start, goal), start));
-	Matrix<bool> openset_contains(world.Width(), world.Height());
-	openset_contains.Set(start, true);
 
 	Matrix<Point> came_from(world.Width(), world.Height());
-	Matrix<bool> is_came_from(world.Width(), world.Height());
 
 	Matrix<dist> g_score(world.Width(), world.Height());
 	g_score.Set(start, 0);
@@ -60,11 +63,11 @@ pair<dist, collection<Point>> astar(Map world, Point start, Point goal)
 		Point current = openset.begin()->second;
 		dist current_f = openset.begin()->first;
 		if (current == goal)
-			return reconstruct_path(came_from, is_came_from, goal);
+			return reconstruct_path(came_from, flags, goal);
 
 		openset.erase(openset.begin());
-		openset_contains.Set(current, false);
-		closedset_contains.Set(current, true);
+		flags[current] &= ~OPENSET;
+		flags[current] |= CLOSEDSET;
 
 		collection<Point> neighbors = world.Neighbors(current);
 		for (collection<Point>::const_iterator i = neighbors.begin();
@@ -73,17 +76,16 @@ pair<dist, collection<Point>> astar(Map world, Point start, Point goal)
 			Point neighbor = *i;
 
 			dist tentative_g_score = g_score[current] + dist_between(current, neighbor);
-			if (closedset_contains[neighbor] && tentative_g_score >= g_score[neighbor])
+			if ((flags[neighbor] & CLOSEDSET) && tentative_g_score >= g_score[neighbor])
 				continue;
 
-
-			if (!openset_contains[neighbor] || tentative_g_score < g_score[neighbor])
+			if (!(flags[neighbor] & OPENSET) || tentative_g_score < g_score[neighbor])
 			{
 				came_from.Set(neighbor, current);
-				is_came_from.Set(neighbor, true);
+				flags[neighbor] |= CAME_FROM;
 				g_score.Set(neighbor, tentative_g_score);
 
-				if (openset_contains[neighbor])
+				if (flags[neighbor] & OPENSET)
 				{
 					for (auto i = openset.begin(); i != openset.end(); ++i)
 					{
@@ -95,7 +97,7 @@ pair<dist, collection<Point>> astar(Map world, Point start, Point goal)
 					}
 				}
 				openset.insert(make_pair(g_score[neighbor] + heuristic_cost_estimate(neighbor, goal), neighbor));
-				openset_contains.Set(neighbor, true);
+				flags[neighbor] |= OPENSET;
 			}
 		}
 	}
