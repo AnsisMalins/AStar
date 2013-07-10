@@ -7,6 +7,7 @@ Map::Map(const wstring& path)
 	: width(126), height(126)
 {
 	ifstream mapfile(path);
+	if (mapfile.fail()) throw exception("Couldn't open the map file.");
 	free.reserve(width * height); // TODO: Input validation?
 	while (!mapfile.eof())
 	{
