@@ -135,7 +135,7 @@ void Main(collection<wstring> args)
 		<< endl
 		<< "Total duration: " << dt << " ms" << endl;
 
-	if (args.contains(L"showmap")) world.Show(result.second);
+	if (result != failure && args.contains(L"showmap")) world.Show(result.second);
 #ifdef DEBUG
 	world.Show(result.second, ofstream("result.txt"));
 #endif
