@@ -11,12 +11,12 @@ pair<dist, collection<Point>> failure = make_pair((dist)-1, collection<Point>())
 
 dist dist_between(const Point& a, const Point& b)
 {
-	return (dist)1;
+	return 130 - (a.X() == b.X()) - (a.Y() == b.Y());
 }
 
 dist heuristic_cost_estimate(const Point& start, const Point& goal)
 {
-	return (dist)(abs(goal.X() - start.X()) + abs(goal.Y() - start.Y()));
+	return (dist)(abs(goal.X() - start.X()) + abs(goal.Y() - start.Y())) * 128;
 }
 
 #define CLOSEDSET 0x1
@@ -105,7 +105,7 @@ pair<dist, collection<Point>> astar(Map world, Point start, Point goal)
 	return failure;
 }
 
-#define DEBUG
+//#define DEBUG
 
 void Main(collection<wstring> args)
 {
@@ -151,8 +151,8 @@ int wmain(int argc, wchar_t** argv)
 		args.push_back(wstring(L"C:\\Users\\Ansis\\Desktop\\AStar\\AStarMap.txt"));
 		args.push_back(wstring(L"20"));
 		args.push_back(wstring(L"20"));
-		args.push_back(wstring(L"120"));
-		args.push_back(wstring(L"10"));
+		args.push_back(wstring(L"80"));
+		args.push_back(wstring(L"90"));
 #else
 		args.reserve(argc);
 		for (int i = 1; i < argc; i++) args.push_back(wstring(argv[i]));
